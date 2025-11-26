@@ -19,8 +19,8 @@ const ProfileSelector = ({ selectedProfile, onSelect, profiles, onAddProfile }) 
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
-
-    const filteredProfiles = profiles.filter(profile =>
+    console.log(profiles);
+    const filteredProfiles = (Array.isArray(profiles) ? profiles : []).filter(profile =>
         profile.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 

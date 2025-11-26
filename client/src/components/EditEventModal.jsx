@@ -149,18 +149,6 @@ const EditEventModal = ({ event, onClose, onEventUpdated, profiles, onAddProfile
 
                 <form onSubmit={onSubmit} className="modal-body">
                     <div className="form-group">
-                        <label className="form-label">Event Title</label>
-                        <input
-                            type="text"
-                            className="input-field"
-                            placeholder="Enter event title"
-                            value={title}
-                            onChange={e => setFormData({ ...formData, title: e.target.value })}
-                            required
-                        />
-                    </div>
-
-                    <div className="form-group">
                         <label className="form-label">Profiles</label>
                         <MultiProfileSelector
                             selectedProfiles={selectedProfiles}

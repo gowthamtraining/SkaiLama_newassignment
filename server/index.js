@@ -16,7 +16,14 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/skailama_
 
 // Routes
 // app.use('/api/auth', require('./routes/auth'));
+// Routes
 app.use('/api/events', require('./routes/events'));
 app.use('/api/profiles', require('./routes/profiles'));
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Export the app for Vercel
+module.exports = app;
+
+// Only listen if run directly (local dev)
+if (require.main === module) {
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
