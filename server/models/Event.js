@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 
 const EventSchema = new mongoose.Schema({
-    user: {
+    profiles: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        ref: 'Profile',
         required: true,
-    },
+    }],
     title: {
         type: String,
         required: true,
@@ -25,6 +25,6 @@ const EventSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('Event', EventSchema);

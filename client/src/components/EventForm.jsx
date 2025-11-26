@@ -1,25 +1,58 @@
 import React, { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
 import api from '../utils/api';
+import MultiProfileSelector from './MultiProfileSelector';
+import { Plus, MapPin } from 'lucide-react';
 
-const EventForm = ({ onEventAdded }) => {
-    const user = JSON.parse(localStorage.getItem('user'));
+const EventForm = ({ onEventAdded, currentProfile, profiles, onAddProfile }) => {
     const [formData, setFormData] = useState({
-        title: '',
+        title: 'New Event',
         description: '',
         startTime: '',
         endTime: '',
-        timezone: user?.defaultTimezone || dayjs.tz.guess(),
+        timezone: dayjs.tz.guess(),
     });
+    const [selectedProfiles, setSelectedProfiles] = useState([]);
+
+    useEffect(() => {
+        if (currentProfile && selectedProfiles.length === 0) {
+            setSelectedProfiles([currentProfile]);
+        }
+    }, [currentProfile]);
 
     const { title, description, startTime, endTime, timezone } = formData;
 
-    const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
+    const startDate = startTime ? dayjs(startTime).format('YYYY-MM-DD') : '';
+    const startTimeOnly = startTime ? dayjs(startTime).format('HH:mm') : '09:00';
+    const endDate = endTime ? dayjs(endTime).format('YYYY-MM-DD') : '';
+    const endTimeOnly = endTime ? dayjs(endTime).format('HH:mm') : '09:00';
+
+    const handleStartDateChange = (e) => {
+        setFormData({ ...formData, startTime: `${e.target.value}T${startTimeOnly}` });
+    };
+
+    const handleStartTimeChange = (e) => {
+        const date = startDate || dayjs().format('YYYY-MM-DD');
+        setFormData({ ...formData, startTime: `${date}T${e.target.value}` });
+    };
+
+    const handleEndDateChange = (e) => {
+        setFormData({ ...formData, endTime: `${e.target.value}T${endTimeOnly}` });
+    };
+
+    const handleEndTimeChange = (e) => {
+        const date = endDate || dayjs().format('YYYY-MM-DD');
+        setFormData({ ...formData, endTime: `${date}T${e.target.value}` });
+    };
 
     const onSubmit = async e => {
         e.preventDefault();
 
-        // Convert local time in selected timezone to UTC
+        if (selectedProfiles.length === 0) {
+            alert('Please select at least one profile');
+            return;
+        }
+
         const startUtc = dayjs.tz(startTime, timezone).utc().format();
         const endUtc = dayjs.tz(endTime, timezone).utc().format();
 
@@ -29,16 +62,16 @@ const EventForm = ({ onEventAdded }) => {
                 description,
                 startTime: startUtc,
                 endTime: endUtc,
-                originalTimezone: timezone
+                originalTimezone: timezone,
+                profileIds: selectedProfiles.map(p => p._id)
             });
 
-            // Reset form
             setFormData({
-                title: '',
+                title: 'New Event',
                 description: '',
                 startTime: '',
                 endTime: '',
-                timezone: user?.defaultTimezone || dayjs.tz.guess(),
+                timezone: dayjs.tz.guess(),
             });
 
             onEventAdded();
@@ -48,7 +81,6 @@ const EventForm = ({ onEventAdded }) => {
         }
     };
 
-    // Common timezones list
     const timezones = [
         "UTC",
         "America/New_York",
@@ -61,76 +93,109 @@ const EventForm = ({ onEventAdded }) => {
         "Australia/Sydney"
     ];
 
+    const isSubmitDisabled = startTime && endTime && dayjs(startTime).isAfter(dayjs(endTime));
+
     return (
-        <div className="bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
-            <h3 className="text-xl font-bold mb-4 text-blue-400">Create New Event</h3>
-            <form onSubmit={onSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="col-span-2">
-                    <label className="block text-gray-400 mb-1">Event Title</label>
-                    <input
-                        type="text"
-                        name="title"
-                        value={title}
-                        onChange={onChange}
-                        className="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500"
-                        required
-                    />
-                </div>
-                <div className="col-span-2">
-                    <label className="block text-gray-400 mb-1">Description</label>
-                    <textarea
-                        name="description"
-                        value={description}
-                        onChange={onChange}
-                        className="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500"
-                        rows="2"
-                    />
-                </div>
-                <div>
-                    <label className="block text-gray-400 mb-1">Start Time (Local)</label>
-                    <input
-                        type="datetime-local"
-                        name="startTime"
-                        value={startTime}
-                        onChange={onChange}
-                        className="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500"
-                        required
-                    />
-                </div>
-                <div>
-                    <label className="block text-gray-400 mb-1">End Time (Local)</label>
-                    <input
-                        type="datetime-local"
-                        name="endTime"
-                        value={endTime}
-                        onChange={onChange}
-                        className="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500"
-                        required
-                    />
-                </div>
-                <div className="col-span-2">
-                    <label className="block text-gray-400 mb-1">Event Timezone</label>
+        <form onSubmit={onSubmit} className="card">
+            <h3 className="card-title">Create New Event</h3>
+            <div className="form-group">
+                <label className="form-label">Profiles</label>
+                <MultiProfileSelector
+                    selectedProfiles={selectedProfiles}
+                    onSelect={setSelectedProfiles}
+                    profiles={profiles}
+                    onAddProfile={onAddProfile}
+                />
+            </div>
+             <div className="form-group">
+                <label className="form-label">Timezone</label>
+                <div className="relative">
                     <select
-                        name="timezone"
+                        className="input-field pl-10"
                         value={timezone}
-                        onChange={onChange}
-                        className="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-blue-500"
+                        onChange={(e) => {
+                            const newTimezone = e.target.value;
+                            const newStartTime = startTime ? dayjs.tz(startTime, timezone).tz(newTimezone).format('YYYY-MM-DDTHH:mm') : '';
+                            const newEndTime = endTime ? dayjs.tz(endTime, timezone).tz(newTimezone).format('YYYY-MM-DDTHH:mm') : '';
+
+                            setFormData({
+                                ...formData,
+                                timezone: newTimezone,
+                                startTime: newStartTime,
+                                endTime: newEndTime
+                            });
+                        }}
                     >
                         {timezones.map(tz => (
                             <option key={tz} value={tz}>{tz}</option>
                         ))}
                     </select>
-                    <p className="text-xs text-gray-500 mt-1">
-                        The times above are entered in this timezone. They will be converted to UTC for storage.
-                    </p>
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <MapPin size={16} className="text-gray-400" />
+                    </div>
                 </div>
-                <div className="col-span-2">
-                    <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-200">
-                        Create Event
-                    </button>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label className="form-label">Start Date</label>
+                    <input
+                        type="date"
+                        className="input-field"
+                        value={startDate}
+                        min={dayjs().format('YYYY-MM-DD')}
+                        onChange={handleStartDateChange}
+                        required
+                    />
                 </div>
-            </form>
-        </div>
+                <div>
+                    <label className="form-label">Start Time</label>
+                    <input
+                        type="time"
+                        className="input-field"
+                        value={startTimeOnly}
+                        min={startDate === dayjs().format('YYYY-MM-DD') ? dayjs().format('HH:mm') : undefined}
+                        onChange={handleStartTimeChange}
+                        required
+                    />
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label className="form-label">End Date</label>
+                    <input
+                        type="date"
+                        className="input-field"
+                        value={endDate}
+                        min={startTime ? dayjs(startTime).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD')}
+                        onChange={handleEndDateChange}
+                        required
+                    />
+                </div>
+                <div>
+                    <label className="form-label">End Time</label>
+                    <input
+                        type="time"
+                        className="input-field"
+                        value={endTimeOnly}
+                        min={endDate === startDate ? startTimeOnly : undefined}
+                        onChange={handleEndTimeChange}
+                        required
+                    />
+                </div>
+            </div>
+
+           
+
+            <button
+                type="submit"
+                disabled={isSubmitDisabled}
+                className={`w-full btn ${isSubmitDisabled ? 'btn-disabled' : 'btn-primary'}`}
+            >
+                <Plus size={18} className="mr-2" />
+                Create Event
+            </button>
+        </form>
     );
 };
 

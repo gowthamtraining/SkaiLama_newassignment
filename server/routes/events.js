@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const Event = require('../models/Event');
+const EventLog = require('../models/EventLog');
 const dayjs = require('dayjs');
 const utc = require('dayjs/plugin/utc');
 const timezone = require('dayjs/plugin/timezone');
@@ -9,24 +10,15 @@ const timezone = require('dayjs/plugin/timezone');
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-// Middleware to verify token
-const auth = (req, res, next) => {
-    const token = req.header('x-auth-token');
-    if (!token) return res.status(401).json({ msg: 'No token, authorization denied' });
+// Middleware to verify token - REMOVED
+// const auth = (req, res, next) => { ... };
 
+// Get all events
+router.get('/', async (req, res) => {
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded.user;
-        next();
-    } catch (err) {
-        res.status(401).json({ msg: 'Token is not valid' });
-    }
-};
-
-// Get all events for user
-router.get('/', auth, async (req, res) => {
-    try {
-        const events = await Event.find({ user: req.user.id }).sort({ startTime: 1 });
+        const { profileId } = req.query;
+        const query = profileId ? { profiles: profileId } : {};
+        const events = await Event.find(query).populate('profiles').sort({ startTime: 1 });
         res.json(events);
     } catch (err) {
         console.error(err.message);
@@ -35,21 +27,9 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Create Event
-router.post('/', auth, async (req, res) => {
+router.post('/', async (req, res) => {
     try {
-        const { title, description, startTime, endTime, originalTimezone } = req.body;
-
-        // Ensure times are stored as UTC
-        // The frontend should send ISO strings, but we can double check or convert if needed.
-        // Assuming frontend sends: "2023-10-27T10:00:00" (local time string) and "America/New_York"
-        // We need to interpret that time IN that timezone, then convert to UTC.
-
-        // However, simpler approach: Frontend sends ISO UTC strings directly.
-        // Let's assume frontend handles the conversion to UTC before sending, 
-        // OR we trust the ISO string provided is the correct absolute time.
-
-        // Let's stick to the plan: Backend stores UTC.
-        // We will save exactly what is passed, assuming it's a valid date string.
+        const { title, description, startTime, endTime, originalTimezone, profileIds } = req.body;
 
         const newEvent = new Event({
             title,
@@ -57,7 +37,7 @@ router.post('/', auth, async (req, res) => {
             startTime,
             endTime,
             originalTimezone,
-            user: req.user.id
+            profiles: profileIds
         });
 
         const event = await newEvent.save();
@@ -68,18 +48,74 @@ router.post('/', auth, async (req, res) => {
     }
 });
 
-// Delete Event
-router.delete('/:id', auth, async (req, res) => {
+// Update Event
+router.put('/:id', async (req, res) => {
+    try {
+        const { title, description, startTime, endTime, originalTimezone, profileIds } = req.body;
+
+        let event = await Event.findById(req.params.id).populate('profiles');
+        if (!event) return res.status(404).json({ msg: 'Event not found' });
+
+        const changes = [];
+
+        if (event.title !== title) changes.push(`Title updated to: ${title}`);
+        if (event.description !== description) changes.push(`Description updated`);
+        if (new Date(event.startTime).toISOString() !== new Date(startTime).toISOString() ||
+            new Date(event.endTime).toISOString() !== new Date(endTime).toISOString()) {
+            changes.push(`End date/time updated`); // Simplified message as per screenshot
+        }
+
+        const oldProfileIds = event.profiles.map(p => p._id.toString()).sort();
+        const newProfileIds = profileIds.sort();
+        const profilesChanged = JSON.stringify(oldProfileIds) !== JSON.stringify(newProfileIds);
+
+        if (profilesChanged) {
+            const Profile = require('../models/Profile');
+            const newProfiles = await Profile.find({ _id: { $in: profileIds } });
+            const newProfileNames = newProfiles.map(p => p.name).join(', ');
+            changes.push(`Profiles changed to: ${newProfileNames}`);
+        }
+
+        event.title = title;
+        event.description = description;
+        event.startTime = startTime;
+        event.endTime = endTime;
+        event.originalTimezone = originalTimezone;
+        event.profiles = profileIds;
+
+        await event.save();
+
+        for (const msg of changes) {
+            await new EventLog({
+                eventId: event._id,
+                message: msg
+            }).save();
+        }
+
+        res.json(event);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+router.delete('/:id', async (req, res) => {
     try {
         const event = await Event.findById(req.params.id);
         if (!event) return res.status(404).json({ msg: 'Event not found' });
 
-        if (event.user.toString() !== req.user.id) {
-            return res.status(401).json({ msg: 'User not authorized' });
-        }
-
         await event.deleteOne();
         res.json({ msg: 'Event removed' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+router.get('/:id/logs', async (req, res) => {
+    try {
+        const logs = await EventLog.find({ eventId: req.params.id }).sort({ timestamp: -1 });
+        res.json(logs);
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
