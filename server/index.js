@@ -14,9 +14,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/skailama_
     .then(() => console.log('MongoDB Connected'))
     .catch(err => console.log(err));
 
-// Routes
-// app.use('/api/auth', require('./routes/auth'));
-// Routes
+
 app.get("/health-check", (req, res) => {
     res.send("OK");
 });
