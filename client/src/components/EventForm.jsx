@@ -72,8 +72,6 @@ const EventForm = ({ onEventAdded, currentProfile, profiles, onAddProfile }) => 
                 endTime: '',
                 timezone: dayjs.tz.guess(),
             });
-
-            onEventAdded();
         } catch (err) {
             console.error('Error adding event', err);
             alert('Failed to add event');

@@ -106,7 +106,6 @@ const EditEventModal = ({ event, onClose, onEventUpdated, profiles, onAddProfile
                 profileIds: selectedProfiles.map(p => p._id)
             });
 
-            onEventUpdated();
             onClose();
         } catch (err) {
             console.error('Error updating event', err);
