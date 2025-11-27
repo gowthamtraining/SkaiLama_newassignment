@@ -52,8 +52,6 @@ router.put('/:id', async (req, res) => {
 
         const changes = [];
 
-        if (event.title !== title) changes.push(`Title updated to: ${title}`);
-        if (event.description !== description) changes.push(`Description updated`);
         if (new Date(event.startTime).toISOString() !== new Date(startTime).toISOString() ||
             new Date(event.endTime).toISOString() !== new Date(endTime).toISOString()) {
             changes.push(`End date/time updated`);
@@ -108,7 +106,7 @@ router.delete('/:id', async (req, res) => {
 
 router.get('/:id/logs', async (req, res) => {
     try {
-        const logs = await EventLog.find({ eventId: req.params.id }).sort({ timestamp: -1 });
+        const logs = await EventLog.find({ eventId: req.params.id }).populate("eventId").sort({ timestamp: -1 });
         res.json(logs);
     } catch (err) {
         console.error(err.message);

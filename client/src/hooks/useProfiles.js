@@ -34,5 +34,5 @@ export const useProfiles = () => {
         fetchProfiles();
     }, [fetchProfiles]);
 
-    return { profiles, loading, addProfile };
+    return { profiles, loading, addProfile,fetchProfiles };
 };

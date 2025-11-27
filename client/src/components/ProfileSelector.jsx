@@ -6,7 +6,7 @@ const ProfileSelector = ({ selectedProfile, onSelect, profiles, onAddProfile }) 
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [newProfileName, setNewProfileName] = useState('');
-    const [filteredProfiles,setfilteredProfiles] = useState([])
+    const [filteredProfiles,setfilteredProfiles] = useState(profiles)
     const dropdownRef = useRef(null);
 
     useEffect(() => {
@@ -26,7 +26,7 @@ const ProfileSelector = ({ selectedProfile, onSelect, profiles, onAddProfile }) 
             profile.name.toLowerCase().includes(searchTerm.toLowerCase())
         );
         setfilteredProfiles(filteredProfiles)
-    }, [searchTerm]);
+    }, [searchTerm,profiles]);
 
     const handleAddProfile = async () => {
         if (!newProfileName.trim()) return;

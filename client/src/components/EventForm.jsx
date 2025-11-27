@@ -13,9 +13,8 @@ const EventForm = ({ onEventAdded, currentProfile, profiles, onAddProfile }) => 
         timezone: dayjs.tz.guess(),
     });
     const [selectedProfiles, setSelectedProfiles] = useState([]);
-
     useEffect(() => {
-        if (currentProfile && selectedProfiles.length === 0) {
+        if (currentProfile) {
             setSelectedProfiles([currentProfile]);
         }
     }, [currentProfile]);

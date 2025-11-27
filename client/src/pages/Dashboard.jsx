@@ -14,9 +14,12 @@ const Dashboard = () => {
     const [editingEvent, setEditingEvent] = useState(null);
     const [viewingLogsEvent, setViewingLogsEvent] = useState(null);
 
-    const { profiles, addProfile } = useProfiles();
+    const { profiles, addProfile} = useProfiles();
     const { events, fetchEvents, deleteEvent } = useEvents(currentProfile);
-    console.log(profiles,"profiles")
+    console.log(events,"profiles")
+    // useEffect(()=>{
+    //     fetchProfiles()
+    // },[])
     useEffect(() => {
         if (profiles.length > 0 && !currentProfile) {
             setCurrentProfile(profiles[0]);

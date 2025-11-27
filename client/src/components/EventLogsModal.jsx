@@ -6,7 +6,7 @@ import { X, Clock } from 'lucide-react';
 const EventLogsModal = ({ event, onClose }) => {
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
-
+    console.log(logs,"logs")
     useEffect(() => {
         const fetchLogs = async () => {
             try {
@@ -49,7 +49,7 @@ const EventLogsModal = ({ event, onClose }) => {
                                 <div key={log._id} className="bg-gray-50 p-3 rounded-md border border-gray-100">
                                     <div className="flex items-center text-xs text-gray-400 mb-1">
                                         <Clock size={12} className="mr-1" />
-                                        {dayjs(log.timestamp).format('MMM D, YYYY [at] hh:mm A')}
+                                        {dayjs(log.timestamp).tz(log.eventId.originalTimezone).format('MMM D, YYYY [at] hh:mm A')}
                                     </div>
                                     <div className="text-sm text-gray-700">
                                         {log.message}
