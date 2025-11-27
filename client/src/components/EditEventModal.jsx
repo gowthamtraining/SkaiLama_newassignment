@@ -42,9 +42,6 @@ const EditEventModal = ({ event, onClose, onEventUpdated, profiles, onAddProfile
                 } else {
                     setSelectedProfiles(event.profiles);
                 }
-            } else if (event.profile) {
-                const p = profiles.find(p => p._id === event.profile || p._id === event.profile._id);
-                if (p) setSelectedProfiles([p]);
             }
         }
     }, [event, profiles]);

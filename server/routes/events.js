@@ -10,10 +10,6 @@ const timezone = require('dayjs/plugin/timezone');
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-// Middleware to verify token - REMOVED
-// const auth = (req, res, next) => { ... };
-
-// Get all events
 router.get('/', async (req, res) => {
     try {
         const { profileId } = req.query;
@@ -26,7 +22,6 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Create Event
 router.post('/', async (req, res) => {
     try {
         const { title, description, startTime, endTime, originalTimezone, profileIds } = req.body;
@@ -48,7 +43,6 @@ router.post('/', async (req, res) => {
     }
 });
 
-// Update Event
 router.put('/:id', async (req, res) => {
     try {
         const { title, description, startTime, endTime, originalTimezone, profileIds } = req.body;
@@ -62,7 +56,7 @@ router.put('/:id', async (req, res) => {
         if (event.description !== description) changes.push(`Description updated`);
         if (new Date(event.startTime).toISOString() !== new Date(startTime).toISOString() ||
             new Date(event.endTime).toISOString() !== new Date(endTime).toISOString()) {
-            changes.push(`End date/time updated`); // Simplified message as per screenshot
+            changes.push(`End date/time updated`);
         }
 
         const oldProfileIds = event.profiles.map(p => p._id.toString()).sort();

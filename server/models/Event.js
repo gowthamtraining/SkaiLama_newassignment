@@ -14,11 +14,11 @@ const EventSchema = new mongoose.Schema({
         type: String,
     },
     startTime: {
-        type: Date, // Stored in UTC
+        type: Date,
         required: true,
     },
     endTime: {
-        type: Date, // Stored in UTC
+        type: Date,
         required: true,
     },
     originalTimezone: {

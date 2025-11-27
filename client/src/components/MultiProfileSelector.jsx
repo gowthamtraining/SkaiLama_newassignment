@@ -6,7 +6,7 @@ const MultiProfileSelector = ({ selectedProfiles, onSelect, profiles, onAddProfi
     const [searchTerm, setSearchTerm] = useState('');
     const [newProfileName, setNewProfileName] = useState('');
     const dropdownRef = useRef(null);
-
+    const [filteredProfiles,setfilteredProfiles] = useState(profiles);
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -20,12 +20,17 @@ const MultiProfileSelector = ({ selectedProfiles, onSelect, profiles, onAddProfi
         };
     }, []);
 
-    const filteredProfiles = profiles.filter(profile =>
-        profile.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
+    useEffect(() => {
+        const filtered = profiles.filter(profile =>
+            profile.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        setfilteredProfiles(filtered);
+    }, [profiles,searchTerm]);
     const handleAddProfile = async () => {
-        if (!newProfileName.trim()) return;
+        if (!newProfileName.trim()){
+            window.alert("Please enter a profile name");
+            return; 
+        };
         const newProfile = await onAddProfile(newProfileName);
         if (newProfile) {
             onSelect([...selectedProfiles, newProfile]);
@@ -44,6 +49,8 @@ const MultiProfileSelector = ({ selectedProfiles, onSelect, profiles, onAddProfi
         }
         onSelect(newSelection);
     };
+
+    const selectedIds = new Set(selectedProfiles.map(p => p._id));
 
     return (
         <div className="relative" ref={dropdownRef}>
@@ -78,25 +85,22 @@ const MultiProfileSelector = ({ selectedProfiles, onSelect, profiles, onAddProfi
                     </div>
 
                     <div className="max-h-48 overflow-y-auto">
-                        {(() => {
-                            const selectedIds = new Set(selectedProfiles.map(p => p._id));
-
-                            return filteredProfiles.map(profile => {
-                                const isSelected = selectedIds.has(profile._id);
-                                return (
-                                    <div
-                                        key={profile._id}
-                                        className={`px-4 py-2 text-sm cursor-pointer flex justify-between items-center ${isSelected ? 'bg-indigo-500 text-white' : 'hover:bg-gray-50 text-gray-700'}`}
-                                        onClick={() => toggleProfile(profile)}
-                                    >
-                                        <div className="flex items-center">
-                                            {isSelected && <Check size={14} className="mr-2" />}
-                                            <span className={!isSelected ? 'ml-6' : ''}>{profile.name}</span>
+                            {filteredProfiles.map(profile => {
+                                    const isSelected = selectedIds.has(profile._id);
+                                    return (
+                                        <div
+                                            key={profile._id}
+                                            className={`px-4 py-2 text-sm cursor-pointer flex justify-between items-center ${isSelected ? 'bg-indigo-500 text-white' : 'hover:bg-gray-50 text-gray-700'}`}
+                                            onClick={() => toggleProfile(profile)}
+                                        >
+                                            <div className="flex items-center">
+                                                {isSelected && <Check size={14} className="mr-2" />}
+                                                <span className={!isSelected ? 'ml-6' : ''}>{profile.name}</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                );
-                            });
-                        })()}
+                                    );
+                                })}
+
                         {filteredProfiles.length === 0 && (
                             <div className="px-4 py-2 text-sm text-gray-400 text-center">No profiles found</div>
                         )}
@@ -129,8 +133,9 @@ const MultiProfileSelector = ({ selectedProfiles, onSelect, profiles, onAddProfi
                         </div>
                     </div>
                 </div>
-            )}
-        </div>
+    )
+}
+        </div >
     );
 };
 
